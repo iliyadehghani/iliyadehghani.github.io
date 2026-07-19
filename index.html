@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>~/portfolio — cybersecurity analyst</title>
+<style>
+  /* ---------- gruvbox-inspired terminal palette ---------- */
+  :root {
+    --bg:        #1d2021;  /* terminal background */
+    --bg-soft:   #282828;  /* pane background */
+    --bg-raise:  #32302f;  /* hover / cards */
+    --fg:        #ebdbb2;  /* default text */
+    --fg-dim:    #a89984;  /* comments, metadata */
+    --green:     #b8bb26;  /* prompt user */
+    --aqua:      #8ec07c;  /* success, verified */
+    --blue:      #83a598;  /* paths, links */
+    --yellow:    #fabd2f;  /* highlights, cursor */
+    --orange:    #fe8019;  /* in-progress, accents */
+    --red:       #fb4934;  /* errors (unused, reserved) */
+    --border:    #3c3836;
+    --mono: "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace,
+            "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .cursor { animation: none !important; }
+    .typeline { width: auto !important; animation: none !important; border-right: none !important; }
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--mono);
+    font-size: 15px;
+    line-height: 1.7;
+    padding: 2.5rem 1rem 3rem;
+    display: flex;
+    justify-content: center;
+  }
+
+  ::selection { background: var(--yellow); color: var(--bg); }
+
+  /* ---------- terminal window ---------- */
+  .term {
+    width: 100%;
+    max-width: 880px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 16px 48px rgba(0,0,0,.5);
+  }
+
+  .titlebar {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .6rem .9rem;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    font-size: .8rem;
+    color: var(--fg-dim);
+  }
+  .titlebar .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .dot.r { background: #cc241d; } .dot.y { background: #d79921; } .dot.g { background: #98971a; }
+  .titlebar .title { margin-left: .6rem; }
+
+  .screen { padding: 1.6rem 1.7rem 2.2rem; }
+  @media (max-width: 560px) { .screen { padding: 1.2rem 1rem 1.8rem; } }
+
+  /* ---------- prompt & output primitives ---------- */
+  .block {
+    margin-bottom: 1.6rem;
+    padding: 1.15rem 1.25rem;
+    background: rgba(255,255,255,.015);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  .block:last-child { margin-bottom: 0; }
+  @media (max-width: 560px) { .block { padding: .9rem .8rem; } }
+
+  .prompt { color: var(--fg); white-space: nowrap; overflow-x: auto; }
+  .prompt .user { color: var(--green); font-weight: 700; }
+  .prompt .path { color: var(--blue); font-weight: 700; }
+  .prompt .sym  { color: var(--fg); }
+  .prompt .cmd  { color: var(--fg); }
+  .prompt .cmd .arg { color: var(--aqua); }
+
+  .out { margin-top: .55rem; }
+  .comment { color: var(--fg-dim); }
+
+  .cursor {
+    display: inline-block;
+    width: .58em; height: 1.05em;
+    background: var(--yellow);
+    vertical-align: text-bottom;
+    animation: blink 1.1s steps(1) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* hero typing effect (first command only) */
+  .typeline {
+    display: inline-block;
+    overflow: hidden;
+    white-space: nowrap;
+    vertical-align: bottom;
+    width: 0;
+    animation: typing 1.1s steps(6, end) .35s forwards;
+  }
+  @keyframes typing { to { width: 6.2ch; } }
+
+  /* ---------- hero ---------- */
+  .hero-name {
+    font-size: clamp(1.5rem, 4.5vw, 2.1rem);
+    font-weight: 700;
+    color: var(--yellow);
+    letter-spacing: .01em;
+    margin-top: .35rem;
+  }
+  .hero-role { color: var(--aqua); }
+  .hero-meta { color: var(--fg-dim); font-size: .9rem; margin-top: .2rem; }
+
+  /* ---------- links ---------- */
+  a { color: var(--blue); text-decoration: none; }
+  a:hover, a:focus-visible { background: var(--blue); color: var(--bg); outline: none; }
+  a:focus-visible { box-shadow: 0 0 0 2px var(--blue); }
+
+  .contact { list-style: none; margin-top: .7rem; }
+  .contact li { padding: .12rem 0; }
+  .contact .key { color: var(--fg-dim); display: inline-block; min-width: 9ch; }
+  .contact .arrow { color: var(--orange); }
+
+  /* ---------- projects: ls -la output ---------- */
+  .ls-head { color: var(--fg-dim); font-size: .85rem; }
+
+  .proj {
+    display: block;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--blue);
+    background: var(--bg-raise);
+    border-radius: 4px;
+    padding: .85rem 1rem;
+    margin-top: .8rem;
+    color: var(--fg);
+    transition: border-color .15s ease, transform .15s ease;
+  }
+  .proj:hover, .proj:focus-visible {
+    background: var(--bg-raise);
+    color: var(--fg);
+    border-left-color: var(--yellow);
+    transform: translateX(3px);
+  }
+  .proj .line1 { display: flex; flex-wrap: wrap; gap: .6rem; align-items: baseline; }
+  .proj .perm { color: var(--fg-dim); font-size: .8rem; margin-right: .6rem; }
+  .proj .dir  { color: var(--blue); font-weight: 700; }
+  .proj:hover .dir { color: var(--yellow); }
+  .proj .desc { color: var(--fg); margin-top: .25rem; font-size: .92rem; }
+  .proj .status { margin-top: .3rem; font-size: .85rem; }
+  .status .tag-pending { color: var(--orange); }
+  .status .tag-file { color: var(--fg-dim); }
+
+  .empty-slot {
+    border: 1px dashed var(--border);
+    border-radius: 4px;
+    padding: .85rem 1rem;
+    margin-top: .8rem;
+    color: var(--fg-dim);
+    font-size: .92rem;
+  }
+
+  /* ---------- certifications ---------- */
+  .cert { display: flex; flex-wrap: wrap; gap: .35rem .8rem; padding: .3rem 0; align-items: baseline; }
+  .cert .tag {
+    font-size: .78rem; font-weight: 700;
+    padding: 0 .45rem; border-radius: 3px;
+    margin-right: .5rem;
+  }
+  .tag.ok  { color: var(--bg); background: var(--aqua); }
+  a.tag.ok:hover, a.tag.ok:focus-visible { background: var(--yellow); color: var(--bg); }
+  .tag.wip { color: var(--bg); background: var(--orange); }
+  .cert .cname { color: var(--fg); font-weight: 700; }
+  .cert .cissuer { color: var(--fg-dim); font-size: .9rem; margin-left: .2rem; }
+
+</style>
+</head>
+<body>
+
+<main class="term">
+  <div class="titlebar" aria-hidden="true">
+    <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+    <span class="title">user@server: ~/portfolio</span>
+  </div>
+
+  <div class="screen">
+
+    <!-- ============ HERO ============ -->
+    <section class="block" id="top">
+      <p class="prompt"><span class="user">user@server</span><span class="sym">:</span><span class="path">~</span><span class="sym">$ </span><span class="cmd typeline">whoami</span></p>
+      <div class="out">
+        <p class="hero-name">[Iliya Dehghani]</p>
+        <p class="hero-role">cybersecurity analyst · defensive security</p>
+        <p class="hero-meta"># monitoring · triage · response · automation</p>
+      </div>
+    </section>
+
+    <!-- ============ ABOUT ============ -->
+    <section class="block" id="about">
+      <p class="prompt"><span class="user">user@server</span><span class="sym">:</span><span class="path">~</span><span class="sym">$ </span><span class="cmd">cat <span class="arg">about.md</span></span></p>
+      <div class="out">
+        <p>Cybersecurity student and junior analyst with hands-on security operations
+        experience in a healthcare environment — alert triage and investigation,
+        endpoint protection, phishing simulation, and vulnerability and patch
+        management. I build and break things in a self-hosted lab to understand
+        attacks from both sides, automate the repetitive parts with scripts, and
+        explain the technical parts in plain language.</p>
+        <p class="comment" style="margin-top:.6rem;"># six years of customer-facing technical work before that.
+        i like fixing things and telling people how i fixed them.</p>
+        <ul class="contact">
+          <li><span class="key">email</span> <span class="arrow">-></span> <a href="mailto:iliya.dgh@pm.me">iliya.dgh@pm.me</a></li>
+          <li><span class="key">linkedin</span> <span class="arrow">-></span> <a href="https://www.linkedin.com/in/iliya-dehghani" target="_blank" rel="noopener">linkedin.com/in/iliya-dehghani</a></li>
+          <li><span class="key">github</span> <span class="arrow">-></span> <a href="https://github.com/iliyadehghani" target="_blank" rel="noopener">github.com/iliyadehghani</a></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============ CERTIFICATIONS ============ -->
+    <section class="block" id="certs">
+      <p class="prompt"><span class="user">user@server</span><span class="sym">:</span><span class="path">~</span><span class="sym">$ </span><span class="cmd">cat <span class="arg">certifications.log</span></span></p>
+      <div class="out">
+        <div class="cert">
+          <a class="tag ok" href="https://www.credly.com/badges/791b6f8a-2cf4-4bfc-868f-3d25c6a9a63b" target="_blank" rel="noopener" title="Verify this credential">VERIFIED ↗</a>
+          <span class="cname">Certified in Cybersecurity (CC)</span>
+          <span class="cissuer">— ISC2</span>
+        </div>
+        <div class="cert">
+          <a class="tag ok" href="https://www.coursera.org/account/accomplishments/specialization/UD7VT90PZ7GR" target="_blank" rel="noopener" title="Verify this credential">VERIFIED ↗</a>
+          <span class="cname">Google Cybersecurity Certificate</span>
+          <span class="cissuer">— Google</span>
+        </div>
+        <div class="cert">
+          <span class="tag wip">IN&nbsp;PROGRESS</span>
+          <span class="cname">Security+</span>
+          <span class="cissuer">— CompTIA</span>
+        </div>
+        <p class="comment" style="margin-top:.7rem;"># degree: honours bachelor's, cybersecurity — expected 2027</p>
+      </div>
+    </section>
+
+    <!-- ============ PROJECTS ============ -->
+    <section class="block" id="projects">
+      <p class="prompt"><span class="user">user@server</span><span class="sym">:</span><span class="path">~</span><span class="sym">$ </span><span class="cmd">ls -la <span class="arg">~/projects/</span></span></p>
+      <div class="out">
+        <p class="ls-head">total 3</p>
+
+        <a class="proj" href="https://github.com/iliyadehghani/Digital-Forensics-Labs" target="_blank" rel="noopener">
+          <span class="line1">
+            <span class="perm">drwxr-xr-x</span>
+            <span class="dir">digital-forensics-labs/</span>
+          </span>
+          <p class="desc">A hands-on digital forensics portfolio featuring two case-study lab reports covering raw hex-level disk/FAT32 analysis, manual file carving, steganography extraction, and network traffic forensics. Both projects include full examination methodology, findings, and documented chain-of-custody logs consistent with standard evidentiary handling practice.</p>
+          <p class="status"><span class="tag-file">README.md</span></p>
+        </a>
+
+        <a class="proj" href="https://github.com/iliyadehghani/The-Art-of-Network-Penetration-Testing-Labs-Report" target="_blank" rel="noopener">
+          <span class="line1">
+            <span class="perm">drwxr-xr-x</span>
+            <span class="dir">network-penetration-testing-labs/</span>
+          </span>
+          <p class="desc">Hands-on labs simulating internal network breaches — from initial recon and enumeration through exploitation, privilege escalation, and persistence. Documents my process, tools, and findings across a series of self-guided penetration testing exercises.</p>
+          <p class="status"><span class="tag-file">README.md</span></p>
+        </a>
+
+<!--        <a class="proj" href="https://github.com/iliyadehghani/Port-Swigger-Academy-Labs" target="_blank" rel="noopener">
+          <span class="line1">
+            <span class="perm">drwxr-xr-x</span>
+            <span class="dir">port-swigger-academy-labs/</span>
+          </span>
+          <p class="desc">A comprehensive collection of 24 technical lab reports documenting hands-on exploitation across 20+ web application vulnerability classes from the PortSwigger Web Security Academy, spanning server-side, client-side, and advanced topics. Each report details the objective, methodology, findings, and tooling — from SQL injection and XSS to OAuth, JWT attacks, and HTTP request smuggling.</p>
+          <p class="status"><span class="tag-file">README.md</span></p>
+        </a>-->
+      </div>
+    </section>
+
+    <!-- ============ CLOSING PROMPT ============ -->
+    <section class="block" style="background:none;border:none;padding:1.15rem 1.25rem .2rem;">
+      <p class="prompt"><span class="user">user@server</span><span class="sym">:</span><span class="path">~</span><span class="sym">$ </span><span class="cursor" aria-hidden="true"></span></p>
+    </section>
+
+  </div>
+</main>
+
+</body>
+</html>
